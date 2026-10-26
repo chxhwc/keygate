@@ -131,3 +131,66 @@ func TestValidateLicensePrefix(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateSemver(t *testing.T) {
+	tests := []struct {
+		input string
+		ok    bool
+	}{
+		{"1.0.0", true},
+		{"0.0.1", true},
+		{"1.2.3-alpha", true},
+		{"1.2.3-alpha.1", true},
+		{"1.2.3-0.3.7", true},
+		{"1.2.3-x.7.z.92", true},
+		{"1.2.3+20130313144700", true},
+		{"1.2.3-beta+exp.sha.5114f85", true},
+		{"", false},
+		{string(make([]byte, 65)), false},
+		{"v1.0.0", false},
+		{"1.0", false},
+		{"1", false},
+		{"01.0.0", false},
+		{"1.02.0", false},
+		{"1.0.03", false},
+		{"1.2.3-", false},
+		{"1.2.3+", false},
+		{"not-a-version", false},
+	}
+	for _, tt := range tests {
+		err := ValidateSemver(tt.input)
+		if tt.ok && err != nil {
+			t.Errorf("ValidateSemver(%q) = error %q, want nil", tt.input, err.Message)
+		}
+		if !tt.ok && err == nil {
+			t.Errorf("ValidateSemver(%q) = nil, want error", tt.input)
+		}
+	}
+}
+
+func TestValidateHTTPURL(t *testing.T) {
+	tests := []struct {
+		input string
+		ok    bool
+	}{
+		{"https://example.com/download", true},
+		{"http://localhost:9000/logo.png", true},
+		{"https://sub.domain.org/path?q=1#frag", true},
+		{"", false},
+		{string(make([]byte, 2049)), false},
+		{"ftp://files.example.com", false},
+		{"javascript:alert(1)", false},
+		{"example.com/download", false},
+		{"http:///path", false},
+		{"://invalid", false},
+	}
+	for _, tt := range tests {
+		err := ValidateHTTPURL("field", tt.input)
+		if tt.ok && err != nil {
+			t.Errorf("ValidateHTTPURL(%q) = error %q, want nil", tt.input, err.Message)
+		}
+		if !tt.ok && err == nil {
+			t.Errorf("ValidateHTTPURL(%q) = nil, want error", tt.input)
+		}
+	}
+}
