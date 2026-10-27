@@ -1,6 +1,9 @@
 package apperr
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestValidateEmail(t *testing.T) {
 	tests := []struct {
@@ -146,7 +149,8 @@ func TestValidateSemver(t *testing.T) {
 		{"1.2.3+20130313144700", true},
 		{"1.2.3-beta+exp.sha.5114f85", true},
 		{"", false},
-		{string(make([]byte, 65)), false},
+		{"1.0.0-" + strings.Repeat("a", 58), true}, // 64 characters, the limit
+		{"1.0.0-" + strings.Repeat("a", 59), false},
 		{"v1.0.0", false},
 		{"1.0", false},
 		{"1", false},
@@ -155,6 +159,8 @@ func TestValidateSemver(t *testing.T) {
 		{"1.0.03", false},
 		{"1.2.3-", false},
 		{"1.2.3+", false},
+		{"1.2.3-01", false},       // a numeric pre-release with a leading zero
+		{"1.2.3-alpha..1", false}, // an empty pre-release identifier
 		{"not-a-version", false},
 	}
 	for _, tt := range tests {
@@ -177,7 +183,8 @@ func TestValidateHTTPURL(t *testing.T) {
 		{"http://localhost:9000/logo.png", true},
 		{"https://sub.domain.org/path?q=1#frag", true},
 		{"", false},
-		{string(make([]byte, 2049)), false},
+		{"https://example.com/" + strings.Repeat("a", 2028), true}, // 2048 characters, the limit
+		{"https://example.com/" + strings.Repeat("a", 2029), false},
 		{"ftp://files.example.com", false},
 		{"javascript:alert(1)", false},
 		{"example.com/download", false},
